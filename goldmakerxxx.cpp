@@ -2,7 +2,7 @@
 #include <eosio/asset.hpp>
 using namespace eosio;
 
-class [[eosio::contract]] ones : public contract {
+class [[eosio::contract]] goldmakerxxx : public contract {
   public:
     using contract::contract;
 
