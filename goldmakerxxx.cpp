@@ -66,7 +66,7 @@ class [[eosio::contract]] goldmakerxxx : public contract {
     void trade(uint64_t dfs_id,uint64_t defibox_id,uint64_t profit,int64_t min_amount,bool is_reverse){//is_reverse是因为有些交易对是相反的
       require_auth(call_account);
       const double_t fee=0.006;//两个交易所手续费
-      auto ones_pair=get_dfs_pairs(bug_id);
+      auto ones_pair=get_dfs_pairs(dfs_id);
       pair defibox_pair=get_defibox_pairs(defibox_id);
       double_t price;
       if(is_reverse==false) price=(double_t)defibox_pair.reserve1.amount/(double_t)defibox_pair.reserve0.amount;
@@ -74,7 +74,7 @@ class [[eosio::contract]] goldmakerxxx : public contract {
 
       int64_t amount=(double_t)(ones_pair.reserve0.amount)-sqrt((double_t)(ones_pair.reserve0.amount))*sqrt((double_t)(ones_pair.reserve1.amount))/sqrt((price*(1.0-fee)));
       asset swap_eos_quantity=ones_pair.reserve0;
-      asset max_eos=get_balance(ones_pair.token0.get_contract(),operate_account,ones_pair.token0.get_symbol().code());
+      asset max_eos=get_balance(ones_pair.contract0,operate_account,ones_pair.sym0.code());
       
       if(amount>0){//EOS/USDT交易对在ONES更便宜
         swap_eos_quantity.amount=amount;
@@ -93,7 +93,7 @@ class [[eosio::contract]] goldmakerxxx : public contract {
         action(
           permission_level{operate_account, "active"_n},
           name(get_self()), 
-          "exbox"_n, 
+          "defi"_n, 
           std::make_tuple(ones_pair.token0.get_contract(),swap_eos_quantity,std::string("swap,0,")+std::to_string(defibox_id))
         ).send();  
         //保存兑换后的USDT余额
@@ -107,7 +107,7 @@ class [[eosio::contract]] goldmakerxxx : public contract {
         action(
           permission_level{operate_account, "active"_n},
           name(get_self()), 
-          "exbugsell"_n, 
+          "dfssell"_n, 
           std::make_tuple(ones_pair.token1.get_contract(),before,std::string("swap:")+std::to_string(bug_id)+std::string(",min:0"))//只能支持单路径交易
         ).send(); 
         //检查余额
@@ -135,7 +135,7 @@ class [[eosio::contract]] goldmakerxxx : public contract {
         action(
           permission_level{operate_account, "active"_n},
           name(get_self()), 
-          "exburger"_n, 
+          "dfs"_n, 
           std::make_tuple(ones_pair.token0.get_contract(),swap_eos_quantity,std::string("swap:")+std::to_string(bug_id)+std::string(",min:0"))
         ).send();  
         //保存兑换后的USDT余额
@@ -149,7 +149,7 @@ class [[eosio::contract]] goldmakerxxx : public contract {
         action(
           permission_level{operate_account, "active"_n},
           name(get_self()), 
-          "exboxsell"_n, 
+          "defisell"_n, 
           std::make_tuple(ones_pair.token1.get_contract(),before,std::string("swap,0,")+std::to_string(defibox_id))
         ).send(); 
         //检查余额
@@ -161,3 +161,122 @@ class [[eosio::contract]] goldmakerxxx : public contract {
         ).send();
       }
     }    
+
+    void transfer(name code,name from,name to,asset quantity,std::string memo){
+        action(
+            permission_level{from, "active"_n},
+            name(code), 
+            "transfer"_n, 
+            std::make_tuple(from,to,quantity,memo)
+        ).send();     
+    }
+    void tmplog(std::string message){
+      action(
+        permission_level{get_self(), "active"_n},
+        name(get_self()), 
+        "log"_n, 
+        std::make_tuple(message)
+      ).send();  
+    }
+    struct [[eosio::table]] account {
+        asset   balance;
+        uint64_t primary_key()const { return balance.symbol.code().raw(); }
+    };
+
+    static asset get_balance( const name& token_contract_account, const name& owner, const symbol_code& sym_code )
+    {
+        typedef eosio::multi_index< "accounts"_n, account > accounts;
+        accounts accountstable( token_contract_account, owner.value );
+        auto it = accountstable.find(sym_code.raw());
+        check(it!=accountstable.end(),"Token not found, "+owner.to_string()+", "+sym_code.to_string()+"@"+token_contract_account.to_string());                        return it->balance;
+    };
+
+    typedef eosio::multi_index<"last"_n,account> balance;
+
+    void upsert(asset now_balance){
+        balance balancetable(get_self(),get_self().value);
+        auto it=balancetable.find( now_balance.symbol.code().raw());
+        if(it==balancetable.end()){
+            balancetable.emplace(get_self(),[&](auto& row){
+                row.balance=now_balance;
+            });
+        }else{
+            balancetable.modify(it,get_self(),[&](auto& row){
+                row.balance=now_balance;
+            });
+        }
+    }
+
+    asset get_last_balance(symbol_code sym_code){
+        balance balancetable(get_self(),get_self().value);
+        auto it=balancetable.find( sym_code.raw());
+        return it->balance;
+    }
+
+    //获取DEFIBOX合约表
+    struct token{
+      name contract;
+      symbol symbol;
+    };
+    struct [[eosio::table]] pair{
+        uint64_t id;
+        token token0;
+        token token1;
+        asset reserve0;
+        asset reserve1;
+        uint64_t liquidity_token;
+        float_t price0_last;
+        float_t price1_last;
+        uint64_t price0_cumulative_last;
+        uint64_t price1_cumulative_last;
+        time_point_sec block_time_last;
+        uint64_t primary_key()const { return id; }
+    };
+    pair get_defibox_pairs(uint64_t id){
+      eosio::multi_index< "pairs"_n, pair> liquidity_pairs_table(name("swap.defi"),name("swap.defi").value);
+      auto it=liquidity_pairs_table.find(id);
+      check(it!=liquidity_pairs_table.end(),"N/A DEFIBOX pair id");
+      return *it;
+    }
+
+    //获取DFS合约表
+
+    struct [[eosio::table]] market {
+        uint64_t            mid;
+        name                contract0;
+        name                contract1;
+        symbol              sym0;
+        symbol              sym1;
+        asset               reserve0;
+        asset               reserve1;
+        uint64_t            liquidity_token;
+        double_t            price0_last;
+
+        uint64_t primary_key() const { return mid; }
+    };
+    market get_dfs_pairs(uint64_t id){
+      eosio::multi_index< "markets"_n, pair> liquidity_pairs_table(name("defisswapcnt"),name("defisswapcnt").value);
+      auto it=liquidity_pairs_table.find(mid);
+      check(it!=liquidity_pairs_table.end(),"N/A DEFIBOX pair id");
+      return *it;
+    }
+
+    double_t sqrt(double_t A)  
+    {   /**二分法实现开方
+      需要注意的是：
+      1.初始上界是A+0.25，而不是A
+      2.double型的精度DBL_EPSILON，不能随意指定
+      */
+      const double_t DBL_EPSILON =2.2204460492503e-16;
+      double_t a = 0.0, b = A + 0.25, m;  // b = A 是错误的上届
+      // while(b - a > 2*DBL_EPSILON){  //sometimes dead cycle when m == a or m == b.
+      for (;;)
+      {
+        m = (b + a) / 2;
+        if (m - a < DBL_EPSILON || b - m < DBL_EPSILON) break;
+        if ((m*m - A) * (a*a - A) < 0) b = m;
+        else a = m;
+      }
+      return m;
+    }
+};
