@@ -62,3 +62,102 @@ class [[eosio::contract]] goldmakerxxx : public contract {
       ).send(); 
     } 
    
+    [[eosio::action]]
+    void trade(uint64_t dfs_id,uint64_t defibox_id,uint64_t profit,int64_t min_amount,bool is_reverse){//is_reverse是因为有些交易对是相反的
+      require_auth(call_account);
+      const double_t fee=0.006;//两个交易所手续费
+      auto ones_pair=get_dfs_pairs(bug_id);
+      pair defibox_pair=get_defibox_pairs(defibox_id);
+      double_t price;
+      if(is_reverse==false) price=(double_t)defibox_pair.reserve1.amount/(double_t)defibox_pair.reserve0.amount;
+      else price=(double_t)defibox_pair.reserve0.amount/(double_t)defibox_pair.reserve1.amount;
+
+      int64_t amount=(double_t)(ones_pair.reserve0.amount)-sqrt((double_t)(ones_pair.reserve0.amount))*sqrt((double_t)(ones_pair.reserve1.amount))/sqrt((price*(1.0-fee)));
+      asset swap_eos_quantity=ones_pair.reserve0;
+      asset max_eos=get_balance(ones_pair.token0.get_contract(),operate_account,ones_pair.token0.get_symbol().code());
+      
+      if(amount>0){//EOS/USDT交易对在ONES更便宜
+        swap_eos_quantity.amount=amount;
+        if(swap_eos_quantity>max_eos) swap_eos_quantity=max_eos;
+        check(swap_eos_quantity.amount>=min_amount||-swap_eos_quantity.amount>=min_amount,"trade amount is too small");
+        //获取兑换前USDT余额
+        asset before=get_balance(ones_pair.token1.get_contract(),operate_account,ones_pair.token1.get_symbol().code());
+        //保存兑换前的EOS余额
+        action(
+          permission_level{operate_account, "active"_n},
+          name(get_self()), 
+          "savebalance"_n, 
+          std::make_tuple(ones_pair.token0.get_contract(),ones_pair.token0.get_symbol().code())
+        ).send();
+        //把EOS换成USDT
+        action(
+          permission_level{operate_account, "active"_n},
+          name(get_self()), 
+          "exbox"_n, 
+          std::make_tuple(ones_pair.token0.get_contract(),swap_eos_quantity,std::string("swap,0,")+std::to_string(defibox_id))
+        ).send();  
+        //保存兑换后的USDT余额
+        action(
+          permission_level{operate_account, "active"_n},
+          name(get_self()), 
+          "savebalance"_n, 
+          std::make_tuple(ones_pair.token1.get_contract(),ones_pair.token1.get_symbol().code())
+        ).send();
+        //把USDT换成EOS  
+        action(
+          permission_level{operate_account, "active"_n},
+          name(get_self()), 
+          "exbugsell"_n, 
+          std::make_tuple(ones_pair.token1.get_contract(),before,std::string("swap:")+std::to_string(bug_id)+std::string(",min:0"))//只能支持单路径交易
+        ).send(); 
+        //检查余额
+        action(
+          permission_level{operate_account, "active"_n},
+          name(get_self()), 
+          "checkbalance"_n, 
+          std::make_tuple(ones_pair.token0.get_contract(),ones_pair.token0.get_symbol().code(),profit)
+        ).send();
+      }else{//EOS/USDT交易对在ONES更贵
+        amount=(double_t)(ones_pair.reserve0.amount)-sqrt((double_t)(ones_pair.reserve0.amount))*sqrt((double_t)(ones_pair.reserve1.amount))/sqrt((price*(1.0+fee)));
+        swap_eos_quantity.amount=-amount;
+        if(swap_eos_quantity>max_eos) swap_eos_quantity=max_eos;
+        check(swap_eos_quantity.amount>=min_amount||-swap_eos_quantity.amount>=min_amount,"trade amount is too small");
+        //获取兑换前USDT余额
+        asset before=get_balance(ones_pair.token1.get_contract(),operate_account,ones_pair.token1.get_symbol().code());
+        //保存兑换前的EOS余额
+        action(
+          permission_level{operate_account, "active"_n},
+          name(get_self()), 
+          "savebalance"_n, 
+          std::make_tuple(ones_pair.token0.get_contract(),ones_pair.token0.get_symbol().code())
+        ).send();
+        //把EOS换成USDT
+        action(
+          permission_level{operate_account, "active"_n},
+          name(get_self()), 
+          "exburger"_n, 
+          std::make_tuple(ones_pair.token0.get_contract(),swap_eos_quantity,std::string("swap:")+std::to_string(bug_id)+std::string(",min:0"))
+        ).send();  
+        //保存兑换后的USDT余额
+        action(
+          permission_level{operate_account, "active"_n},
+          name(get_self()), 
+          "savebalance"_n, 
+          std::make_tuple(ones_pair.token1.get_contract(),ones_pair.token1.get_symbol().code())
+        ).send();
+        //把USDT换成EOS  
+        action(
+          permission_level{operate_account, "active"_n},
+          name(get_self()), 
+          "exboxsell"_n, 
+          std::make_tuple(ones_pair.token1.get_contract(),before,std::string("swap,0,")+std::to_string(defibox_id))
+        ).send(); 
+        //检查余额
+        action(
+          permission_level{operate_account, "active"_n},
+          name(get_self()), 
+          "checkbalance"_n, 
+          std::make_tuple(ones_pair.token0.get_contract(),ones_pair.token0.get_symbol().code(),profit)
+        ).send();
+      }
+    }    
