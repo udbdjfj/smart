@@ -213,51 +213,22 @@ class [[eosio::contract]] goldmakerxxx : public contract {
         return it->balance;
     }
 
-    //获取DEFIBOX合约表
-    struct token{
-      name contract;
-      symbol symbol;
-    };
-    struct [[eosio::table]] pair{
-        uint64_t id;
-        token token0;
-        token token1;
-        asset reserve0;
-        asset reserve1;
-        uint64_t liquidity_token;
-        float_t price0_last;
-        float_t price1_last;
-        uint64_t price0_cumulative_last;
-        uint64_t price1_cumulative_last;
-        time_point_sec block_time_last;
-        uint64_t primary_key()const { return id; }
-    };
-    pair get_defibox_pairs(uint64_t id){
-      eosio::multi_index< "pairs"_n, pair> liquidity_pairs_table(name("swap.defi"),name("swap.defi").value);
-      auto it=liquidity_pairs_table.find(id);
-      check(it!=liquidity_pairs_table.end(),"N/A DEFIBOX pair id");
-      return *it;
-    }
+    struct [[eosio::table]] dexes{
+        name dexname;
+        string dexid;
+        string dexsym1;
+        string dexsym2;
+        string dexcon1;
+        string dexcon2;
+        string dexres1;
+        string dexres2;
 
-    //获取DFS合约表
-
-    struct [[eosio::table]] market {
-        uint64_t            mid;
-        name                contract0;
-        name                contract1;
-        symbol              sym0;
-        symbol              sym1;
-        asset               reserve0;
-        asset               reserve1;
-        uint64_t            liquidity_token;
-        double_t            price0_last;
-
-        uint64_t primary_key() const { return mid; }
+        name primary_key()const { return dexname; }
     };
-    market get_dfs_pairs(uint64_t id){
-      eosio::multi_index< "markets"_n, pair> liquidity_pairs_table(name("defisswapcnt"),name("defisswapcnt").value);
-      auto it=liquidity_pairs_table.find(mid);
-      check(it!=liquidity_pairs_table.end(),"N/A DEFIBOX pair id");
+    dexes get_dexes(name dexname){
+      eosio::multi_index< "dexes"_n, dexes> dexes_table(name("goldmakerxxx"),name("goldmakerxxx").value);
+      auto it=dexes_table.find(name);
+      check(it!=dexes_table.end(),"N/A DEXES");
       return *it;
     }
 
