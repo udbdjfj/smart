@@ -63,7 +63,24 @@ class [[eosio::contract]] goldmakerxxx : public contract {
     } 
    
     [[eosio::action]]
-    void trade(uint64_t dfs_id,uint64_t defibox_id,uint64_t profit,int64_t min_amount,bool is_reverse){//is_reverse是因为有些交易对是相反的
+    void trade(name from_dex){//is_reverse是因为有些交易对是相反的
+
+      dexes dex_table( "goldmakerxxx"_n, "goldmakerxxx"_n.value );
+      auto rowit = dex_table.find(dexname);
+      if(rowit==dex_table.end()) return {};
+      name dexx;
+      string dexxid;
+      string dexxsym1;
+      string dexxsym2;
+      string dexxcon1;
+      string dexxcon2;
+      string dexxres1;
+      string dexxres2;
+      for(auto& dex: rowit->dexname){
+       if(dex.first.name!=from_dex){
+        dexx = p.first;
+
+
       require_auth(call_account);
       const double_t fee=0.006;//两个交易所手续费
       auto ones_pair=get_dfs_pairs(dfs_id);
@@ -161,6 +178,8 @@ class [[eosio::contract]] goldmakerxxx : public contract {
         ).send();
       }
     }    
+}
+
 
     void transfer(name code,name from,name to,asset quantity,std::string memo){
         action(
