@@ -63,9 +63,10 @@ class [[eosio::contract]] goldmakerxxx : public contract {
     } 
    
     [[eosio::action]]
-    void trade(name from_dex){//is_reverse是因为有些交易对是相反的
+    void mine(name from_dex){//is_reverse是因为有些交易对是相反的
 
-      dexes dex_table( "goldmakerxxx"_n, "goldmakerxxx"_n.value );
+      eosio::multi_index< "dexes"_n, dexes> dexes_table(name("goldmakerxxx"),name("goldmakerxxx").value);
+
       auto rowit = dex_table.find(dexname);
       if(rowit==dex_table.end()) return {};
       name dexx;
@@ -76,10 +77,16 @@ class [[eosio::contract]] goldmakerxxx : public contract {
       string dexxcon2;
       string dexxres1;
       string dexxres2;
-      for(auto& dex: rowit->dexname){
-       if(dex.first.name!=from_dex){
+      for(auto& p: rowit->dexname){
+       if(p.first.name==from_dex){
         dexx = p.first;
-
+        dexxid = p.second;
+        dexxsym1 = p.third;
+        dexxsym2 = p.fourth;
+        dexxcon1 = p.fifth;
+        dexxcon2 = p.sixth;
+        dexxres1 = p.seventh;
+        dexxres2 = p.eighth;
 
       require_auth(call_account);
       const double_t fee=0.006;//两个交易所手续费
@@ -177,7 +184,10 @@ class [[eosio::contract]] goldmakerxxx : public contract {
           std::make_tuple(ones_pair.token0.get_contract(),ones_pair.token0.get_symbol().code(),profit)
         ).send();
       }
-    }    
+    } 
+   }
+  }
+if(dexx=="") return {}; 
 }
 
 
