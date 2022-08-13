@@ -26,17 +26,12 @@ class [[eosio::contract]] goldmakerxxx : public contract {
     }
 
     [[eosio::action]]
-    void dfs(name code,asset quantity,std::string memo){
+    void buy(name code,name buydex, asset quantity,std::string memo){
       require_auth(operate_account);
-      transfer(code,operate_account,name("onesgamedefi"),quantity,memo);
+      transfer(code,operate_account,buydex,quantity,memo);
     }
     [[eosio::action]]
-    void defi(name code,asset quantity,std::string memo){
-      require_auth(operate_account);
-      transfer(code,operate_account,name("swap.defi"),quantity,memo);
-    }
-    [[eosio::action]]
-    void dfssell(name code,asset before,std::string memo){
+    void sell(name code, name selldex, asset before,std::string memo){
       //增量的代币兑换,before是兑换前的代币,需要用到last表,故而使用前需要savebalance
       require_auth(operate_account);
       asset result=get_last_balance(before.symbol.code());
@@ -44,26 +39,13 @@ class [[eosio::contract]] goldmakerxxx : public contract {
       action(
         permission_level{operate_account, "active"_n},
         name(get_self()), 
-        "dfs"_n, 
+        "buy"_n, 
         std::make_tuple(code,delta,memo)
       ).send(); 
     }
-    [[eosio::action]]
-    void defisell(name code,asset before,std::string memo){
-      //增量的代币兑换,before是兑换前的代币,需要用到last表,故而使用前需要savebalance
-      require_auth(operate_account);
-      asset result=get_last_balance(before.symbol.code());
-      asset delta=result-before;
-      action(
-        permission_level{operate_account, "active"_n},
-        name(get_self()), 
-        "defi"_n, 
-        std::make_tuple(code,delta,memo)
-      ).send(); 
-    } 
    
     [[eosio::action]]
-    void mine(name from_dex){//is_reverse是因为有些交易对是相反的
+    void mine(name base_dex){//is_reverse是因为有些交易对是相反
 
       eosio::multi_index< "dexes"_n, dexes> dexes_table(name("goldmakerxxx"),name("goldmakerxxx").value);
 
@@ -77,20 +59,22 @@ class [[eosio::contract]] goldmakerxxx : public contract {
       string dexxcon2;
       string dexxres1;
       string dexxres2;
+      string get_base_pairs;
       for(auto& p: rowit->dexname){
-       if(p.first.name==from_dex){
-        dexx = p.first;
-        dexxid = p.second;
-        dexxsym1 = p.third;
-        dexxsym2 = p.fourth;
-        dexxcon1 = p.fifth;
-        dexxcon2 = p.sixth;
-        dexxres1 = p.seventh;
-        dexxres2 = p.eighth;
+       if(p.first.name==base_dex){
+        base_dexx = p.first;
+        base_dexxid = p.second;
+        base_dexxsym1 = p.third;
+        base_dexxsym2 = p.fourth;
+        base_dexxcon1 = p.fifth;
+        base_dexxcon2 = p.sixth;
+        base_dexxres1 = p.seventh;
+        base_dexxres2 = p.eighth;
+        get_pairs["base"] = &std::string("get_") + p.first.to_string() + std::string("_pairs");
 
       require_auth(call_account);
       const double_t fee=0.006;//两个交易所手续费
-      auto ones_pair=get_dfs_pairs(dfs_id);
+      auto ones_pair=get_pairs["base"](base_dexxid);
       pair defibox_pair=get_defibox_pairs(defibox_id);
       double_t price;
       if(is_reverse==false) price=(double_t)defibox_pair.reserve1.amount/(double_t)defibox_pair.reserve0.amount;
