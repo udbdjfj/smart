@@ -43,7 +43,7 @@ class [[eosio::contract]] goldmakerxxx : public contract {
         std::make_tuple(code,delta,memo)
       ).send(); 
     }
-
+    [[eosio::action]]
     void mine(uint64_t profit, int64_t min_amount){
       require_auth(call_account);
 
@@ -78,7 +78,7 @@ class [[eosio::contract]] goldmakerxxx : public contract {
       trade(uint64_t bid,uint64_t qid,symbol base_sym0,symbol base_sym1,symbol quote_sym0,symbol quote_sym1,name base_con0,name base_con1,name quote_con0,name quote_con1,asset base_res0,asset base_res1,asset quote_res0,asset quote_res1,std::string base_memo,std::string quote_memo,uint64_t profit,int64_t min_amount);
     }
     }
-    }
+   
    
     void trade(bid, qid, base_sym0, base_sym1, quote_sym0, quote_sym1, base_con0, base_con1, quote_con0, quote_con1, base_res0, base_res1, quote_res0, quote_res1, profit, min_amount){//is_reverse是因为有些交易对是相反
 
@@ -232,7 +232,7 @@ class [[eosio::contract]] goldmakerxxx : public contract {
     }
 
     //获取DFS表
-    struct [[eosio::table]] market{
+    struct [[eosio::table]] dfs{
         uint64_t            mid;
         name                contract0;
         name                contract1;
@@ -245,9 +245,9 @@ class [[eosio::contract]] goldmakerxxx : public contract {
 
         uint64_t primary_key() const { return mid; }
     };
-    market get_ones_pairs(uint64_t id){
+    dfs get_dfs_pairs(uint64_t mid){
       eosio::multi_index< "markets"_n, market> liquidity_pairs_table(name("defisswapcnt"),name("defisswapcnt").value);
-      auto it=liquidity_pairs_table.find(id);
+      auto it=liquidity_pairs_table.find(mid);
       check(it!=liquidity_pairs_table.end(),"N/A DFS pair id");
       return *it;
     }
@@ -257,7 +257,7 @@ class [[eosio::contract]] goldmakerxxx : public contract {
       name contract;
       symbol symbol;
     };
-    struct [[eosio::table]] pair{
+    struct [[eosio::table]] defi{
         uint64_t id;
         token token0;
         token token1;
@@ -271,7 +271,7 @@ class [[eosio::contract]] goldmakerxxx : public contract {
         time_point_sec block_time_last;
         uint64_t primary_key()const { return id; }
     };
-    pair get_defibox_pairs(uint64_t id){
+    defi get_defi_pairs(uint64_t id){
       eosio::multi_index< "pairs"_n, pair> liquidity_pairs_table(name("swap.defi"),name("swap.defi").value);
       auto it=liquidity_pairs_table.find(id);
       check(it!=liquidity_pairs_table.end(),"N/A DEFIBOX pair id");
