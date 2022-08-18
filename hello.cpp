@@ -78,6 +78,7 @@ class [[eosio::contract]] goldmakerxxx : public contract {
       trade(uint64_t bid,uint64_t qid,symbol base_sym0,symbol base_sym1,symbol quote_sym0,symbol quote_sym1,name base_con0,name base_con1,name quote_con0,name quote_con1,asset base_res0,asset base_res1,asset quote_res0,asset quote_res1,std::string base_memo,std::string quote_memo,uint64_t profit,int64_t min_amount);
     }
     }
+}
    
    
     void trade(bid, qid, base_sym0, base_sym1, quote_sym0, quote_sym1, base_con0, base_con1, quote_con0, quote_con1, base_res0, base_res1, quote_res0, quote_res1, profit, min_amount){//is_reverse是因为有些交易对是相反
