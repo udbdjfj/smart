@@ -43,34 +43,24 @@ class [[eosio::contract]] goldmakerxxx : public contract {
         std::make_tuple(code,delta,memo)
       ).send(); 
     }
+
+    void mine(uint64_t mid){
+      require_auth(get_self());
+
+      dfs _dfsmarkets(name("defisswapcnt"), name("defisswapcnt").value);
+      for(int i=0; i != _dfsmarkets.end(); i++){
+      auto m_itr = _markets.require_find(mid, "Market does not exist.");
+      create_market(mid, get_self(), m_itr->contract0, m_itr->contract1, m_itr->sym0, m_itr->sym1);
+    }
    
     [[eosio::action]]
-    void mine(name base_dex){//is_reverse是因为有些交易对是相反
+    void trade(name base_dex){//is_reverse是因为有些交易对是相反
 
       eosio::multi_index< "dexes"_n, dexes> dexes_table(name("goldmakerxxx"),name("goldmakerxxx").value);
 
       auto rowit = dex_table.find(dexname);
       if(rowit==dex_table.end()) return {};
-      name dexx;
-      string dexxid;
-      string dexxsym1;
-      string dexxsym2;
-      string dexxcon1;
-      string dexxcon2;
-      string dexxres1;
-      string dexxres2;
-      string get_base_pairs;
-      for(auto& p: rowit->dexname){
-       if(p.first.name==base_dex){
-        base_dexx = p.first;
-        base_dexxid = p.second;
-        base_dexxsym1 = p.third;
-        base_dexxsym2 = p.fourth;
-        base_dexxcon1 = p.fifth;
-        base_dexxcon2 = p.sixth;
-        base_dexxres1 = p.seventh;
-        base_dexxres2 = p.eighth;
-        get_pairs["base"] = &std::string("get_") + p.first.to_string() + std::string("_pairs");
+
 
       require_auth(call_account);
       const double_t fee=0.006;//两个交易所手续费
