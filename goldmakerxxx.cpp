@@ -81,11 +81,11 @@ class [[eosio::contract]] goldmakerxxx : public contract {
       const double_t fee=0.006;//两个交易所手续费
 
       double_t price;
-      if(is_reverse==false) price=(double_t)base_res1.amount/(double_t)base_res0.amount;
-      else price=(double_t)base_res0.amount/(double_t)base_res1.amount;
+      if(is_reverse==false) price=(double_t)quote_res1.amount/(double_t)quote_res0.amount;
+      else price=(double_t)quote_res0.amount/(double_t)quote_res1.amount;
 
-      int64_t amount=(double_t)(ones_pair.reserve0.amount)-sqrt((double_t)(ones_pair.reserve0.amount))*sqrt((double_t)(ones_pair.reserve1.amount))/sqrt((price*(1.0-fee)));
-      asset swap_eos_quantity=ones_pair.reserve0;
+      int64_t amount=(double_t)(base_res0.amount)-sqrt((double_t)(base_res0.amount))*sqrt((double_t)(base_res1.amount))/sqrt((price*(1.0-fee)));
+      asset swap_eos_quantity=base_res0;
       asset max_eos=get_balance(ones_pair.contract0,operate_account,ones_pair.sym0.code());
       
       if(amount>0){//EOS/USDT交易对在ONES更便宜
