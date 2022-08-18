@@ -44,8 +44,8 @@ class [[eosio::contract]] goldmakerxxx : public contract {
       ).send(); 
     }
 
-    void mine(uint64_t mid){
-      require_auth(get_self());
+    void mine(uint64_t profit, int64_t min_amount){
+      require_auth(call_account);
 
       dfs _dfsmarkets(name("defisswapcnt"), name("defisswapcnt").value);
       defi _defimarkets(name("swap.defi"), name("swap.defi").value);
@@ -54,13 +54,28 @@ class [[eosio::contract]] goldmakerxxx : public contract {
       pcash _pcashmarkets(name("swap.pcash"), name("swap.pcash").value);
 
       for(int i=0; i != _dfsmarkets.end(); i++){
-      mid = i;
-      dfs dfs_pair=get_dfs_pairs(mid);
-      auto df_rowit = _defimarkets.find(tokens.symbol.code().raw());
-      trade(mid, get_self(), m_itr->contract0, m_itr->contract1, m_itr-);
+      uint64_t bid = i;
+      dfs base_pair=get_dfs_pairs(bid);
+      symbol base_sym0 = base_pair.sym0;
+      symbol base_sym1 = base_pair.sym1;
+      symbol base_con0 = base_pair.reserve0;
+      symbol base_con1 = base_pair.reserve1;
+      symbol base_res0 = base_pair.contract0;
+      symbol base_res1 = base_pair.contract1;
+      for(int ii=0; ii != _defimarkets.end(); ii++){
+      defi base_pair=get_dfs_pairs(qid);
+      uint64_t qid = ii;
+      symbol quote_sym0 = base_pair.token0.symbol;
+      symbol quote_sym1 = base_pair.token1.symbol;
+      symbol quote_con0 = base_pair.token0.contract;
+      symbol quote_con1 = base_pair.token1.contract;
+      symbol quote_res0 = base_pair.reserve0;
+      symbol quote_res1 = base_pair.reserve1;
+      if(quote_sym0==base_sym0 && quote_sym1==base_sym1 || quote_sym1==base_sym0 && quote_sym0==base_sym1 ) {
+      trade(uint64_t dfs_id,uint64_t defibox_id,uint64_t profit,int64_t min_amount);
     }
    
-    void trade(name base_dex){//is_reverse是因为有些交易对是相反
+    void trade(base_pair, quote_pair, profit, min_amount){//is_reverse是因为有些交易对是相反
 
       eosio::multi_index< "dexes"_n, dexes> dexes_table(name("goldmakerxxx"),name("goldmakerxxx").value);
 
