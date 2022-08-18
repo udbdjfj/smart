@@ -58,38 +58,31 @@ class [[eosio::contract]] goldmakerxxx : public contract {
       dfs base_pair=get_dfs_pairs(bid);
       symbol base_sym0 = base_pair.sym0;
       symbol base_sym1 = base_pair.sym1;
-      symbol base_con0 = base_pair.reserve0;
-      symbol base_con1 = base_pair.reserve1;
-      symbol base_res0 = base_pair.contract0;
-      symbol base_res1 = base_pair.contract1;
+      name base_con0 = base_pair.contract0;
+      name base_con1 = base_pair.contract1;
+      asset base_res0 = base_pair.reserve0;
+      asset base_res1 = base_pair.reserve1;
       for(int ii=0; ii != _defimarkets.end(); ii++){
-      defi base_pair=get_dfs_pairs(qid);
       uint64_t qid = ii;
+      defi base_pair=get_dfs_pairs(qid);
       symbol quote_sym0 = base_pair.token0.symbol;
       symbol quote_sym1 = base_pair.token1.symbol;
-      symbol quote_con0 = base_pair.token0.contract;
-      symbol quote_con1 = base_pair.token1.contract;
-      symbol quote_res0 = base_pair.reserve0;
-      symbol quote_res1 = base_pair.reserve1;
+      name quote_con0 = base_pair.token0.contract;
+      name quote_con1 = base_pair.token1.contract;
+      asset quote_res0 = base_pair.reserve0;
+      asset quote_res1 = base_pair.reserve1;
       if(quote_sym0==base_sym0 && quote_sym1==base_sym1 || quote_sym1==base_sym0 && quote_sym0==base_sym1 ) {
-      trade(uint64_t dfs_id,uint64_t defibox_id,uint64_t profit,int64_t min_amount);
+      trade(uint64_t bid,uint64_t qid,symbol base_sym0,symbol base_sym1,symbol quote_sym0,symbol quote_sym1,name base_con0,name base_con1,name quote_con0,name quote_con1,asset base_res0,asset base_res1,asset quote_res0,asset quote_res1,uint64_t profit,int64_t min_amount);
     }
    
-    void trade(base_pair, quote_pair, profit, min_amount){//is_reverse是因为有些交易对是相反
-
-      eosio::multi_index< "dexes"_n, dexes> dexes_table(name("goldmakerxxx"),name("goldmakerxxx").value);
-
-      auto rowit = dex_table.find(dexname);
-      if(rowit==dex_table.end()) return {};
-
+    void trade(bid, qid, base_sym0, base_sym1, quote_sym0, quote_sym1, base_con0, base_con1, quote_con0, quote_con1, base_res0, base_res1, quote_res0, quote_res1, profit, min_amount){//is_reverse是因为有些交易对是相反
 
       require_auth(call_account);
       const double_t fee=0.006;//两个交易所手续费
-      auto ones_pair=get_pairs["base"](base_dexxid);
-      pair defibox_pair=get_defibox_pairs(defibox_id);
+
       double_t price;
-      if(is_reverse==false) price=(double_t)defibox_pair.reserve1.amount/(double_t)defibox_pair.reserve0.amount;
-      else price=(double_t)defibox_pair.reserve0.amount/(double_t)defibox_pair.reserve1.amount;
+      if(is_reverse==false) price=(double_t)base_res1.amount/(double_t)base_res0.amount;
+      else price=(double_t)base_res0.amount/(double_t)base_res1.amount;
 
       int64_t amount=(double_t)(ones_pair.reserve0.amount)-sqrt((double_t)(ones_pair.reserve0.amount))*sqrt((double_t)(ones_pair.reserve1.amount))/sqrt((price*(1.0-fee)));
       asset swap_eos_quantity=ones_pair.reserve0;
