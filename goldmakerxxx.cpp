@@ -49,11 +49,11 @@ class [[eosio::contract]] goldmakerxxx : public contract {
 
       dfs _dfsmarkets(name("defisswapcnt"), name("defisswapcnt").value);
       for(int i=0; i != _dfsmarkets.end(); i++){
+      mid = i;
       auto m_itr = _markets.require_find(mid, "Market does not exist.");
-      create_market(mid, get_self(), m_itr->contract0, m_itr->contract1, m_itr->sym0, m_itr->sym1);
+      trade(mid, get_self(), m_itr->contract0, m_itr->contract1, m_itr->sym0, m_itr->sym1);
     }
    
-    [[eosio::action]]
     void trade(name base_dex){//is_reverse是因为有些交易对是相反
 
       eosio::multi_index< "dexes"_n, dexes> dexes_table(name("goldmakerxxx"),name("goldmakerxxx").value);
