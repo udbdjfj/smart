@@ -176,11 +176,9 @@ class [[eosio::contract]] goldmakerxxx : public contract {
         ).send();
       }
     } 
-   }
-  }
-if(dexx=="") return {}; 
-}
 
+
+    private:
 
     void transfer(name code,name from,name to,asset quantity,std::string memo){
         action(
@@ -233,7 +231,8 @@ if(dexx=="") return {};
         return it->balance;
     }
 
-    struct [[eosio::table]] dfs{
+    //获取DFS表
+    struct [[eosio::table]] market{
         uint64_t            mid;
         name                contract0;
         name                contract1;
@@ -246,18 +245,19 @@ if(dexx=="") return {};
 
         uint64_t primary_key() const { return mid; }
     };
-    dfs get_dfs_pairs(uint64_t mid){
+    market get_ones_pairs(uint64_t id){
       eosio::multi_index< "markets"_n, market> liquidity_pairs_table(name("defisswapcnt"),name("defisswapcnt").value);
       auto it=liquidity_pairs_table.find(id);
       check(it!=liquidity_pairs_table.end(),"N/A DFS pair id");
       return *it;
     }
 
+    //获取DEFIBOX合约表
     struct token{
       name contract;
       symbol symbol;
     };
-    struct [[eosio::table]] defi{
+    struct [[eosio::table]] pair{
         uint64_t id;
         token token0;
         token token1;
@@ -271,13 +271,12 @@ if(dexx=="") return {};
         time_point_sec block_time_last;
         uint64_t primary_key()const { return id; }
     };
-    defi get_defi_pairs(uint64_t id){
+    pair get_defibox_pairs(uint64_t id){
       eosio::multi_index< "pairs"_n, pair> liquidity_pairs_table(name("swap.defi"),name("swap.defi").value);
       auto it=liquidity_pairs_table.find(id);
       check(it!=liquidity_pairs_table.end(),"N/A DEFIBOX pair id");
       return *it;
     }
-
     double_t sqrt(double_t A)  
     {   /**二分法实现开方
       需要注意的是：
