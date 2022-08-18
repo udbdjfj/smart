@@ -48,10 +48,16 @@ class [[eosio::contract]] goldmakerxxx : public contract {
       require_auth(get_self());
 
       dfs _dfsmarkets(name("defisswapcnt"), name("defisswapcnt").value);
+      defi _defimarkets(name("swap.defi"), name("swap.defi").value);
+      evo _evomarkets(name("evolutiondex"), name("evolutiondex").value);
+      hbg _hbgmarkets(name("hamburgerswp"), name("hamburgerswp").value);
+      pcash _pcashmarkets(name("swap.pcash"), name("swap.pcash").value);
+
       for(int i=0; i != _dfsmarkets.end(); i++){
       mid = i;
-      auto m_itr = _markets.require_find(mid, "Market does not exist.");
-      trade(mid, get_self(), m_itr->contract0, m_itr->contract1, m_itr->sym0, m_itr->sym1);
+      dfs dfs_pair=get_dfs_pairs(mid);
+      auto df_rowit = _defimarkets.find(tokens.symbol.code().raw());
+      trade(mid, get_self(), m_itr->contract0, m_itr->contract1, m_itr-);
     }
    
     void trade(name base_dex){//is_reverse是因为有些交易对是相反
