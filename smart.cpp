@@ -45,7 +45,27 @@ class [[eosio::contract]] goldmakerxxx : public contract {
     }
 
     [[eosio::action]]
-    void mine(uint64_t profit, extended_asset min_amount){
-      require_auth(call_account);
+    void mine(uint64_t profit, int64_t min_amount){
+      
+    
+      
+}
 
-      auto arb = get_best_arb_opportunity(min_amount);
+private:
+
+    struct [[eosio::table]] dexes {
+        uint64_t            id;
+        name                dex_contract;
+
+        uint64_t primary_key() const { return id; }
+    };
+    dexex get_dex(uint64_t id){
+      eosio::multi_index< "dexes"_n, dexes> liquidity_pairs_table(name("goldmakerxxx"),name("goldmakerxxx").value);
+      auto it=liquidity_pairs_table.find(id);
+      check(it!=liquidity_pairs_table.end(),"N/A DEX");
+      return *it;
+    }
+
+
+
+
