@@ -43,3 +43,9 @@ class [[eosio::contract]] goldmakerxxx : public contract {
         std::make_tuple(code,delta,memo)
       ).send(); 
     }
+
+    [[eosio::action]]
+    void mine(uint64_t profit, extended_asset min_amount){
+      require_auth(call_account);
+
+      auto arb = get_best_arb_opportunity(min_amount);
